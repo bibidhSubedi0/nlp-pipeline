@@ -1,4 +1,4 @@
-\# NLP Pipeline
+# NLP Pipeline
 
 
 
@@ -6,25 +6,25 @@ Project for Software Engineering Class
 
 
 
-\## Setup
+## Setup
 
 Steps to run this locally.
 
 
 
-\## Team
+## Team
 
-\- Bibidh Subedi
+- Bibidh Subedi
 
-\- Biprash Pandey
+- Biprash Pandey
 
-\- Bhim Prasad Upadhaye
+- Bhim Prasad Upadhaya
 
-\- Bibek Paudel
+- Bibek Paudel
 
 
 
-\## Status
+## Status
 
 In progress / Phase 1
 
