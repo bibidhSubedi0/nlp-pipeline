@@ -8,5 +8,15 @@
     {"id": 7, "input": "आज मौसम धेरै राम्रो छ। हिजो भने वर्षा भएको थियो।", "note": "multi-sentence"},
     {"id": 8, "input": "नेपालको राजधानी काठमाडौं हो", "note": "proper noun: Kathmandu"},
     {"id": 9, "input": "म तिमीलाई माया गर्छु", "note": "common phrase"},
-    {"id": 10, "input": "बिद्यालय", "note": "common spelling error for विद्यालय"}
+    {"id": 10, "input": "बिद्यालय", "note": "common spelling error for विद्यालय"},
+    {"id": 11, "input": "सीता खाना खान्छे", "note": "clean simple sentence"},
+    {"id": 12, "input": "क", "note": "single character input edge case"},
+    {"id": 13, "input": "मेरो mobile number 9841234567 हो", "note": "mixed Nepali, English and numbers"},
+    {"id": 14, "input": "के तिमी खाना खायौ?", "note": "question mark punctuation"},
+    {"id": 15, "input": "राम, श्याम र हरि साथी हुन्।", "note": "commas and danda together"},
+    {"id": 16, "input": "क्ष", "note": "unicode: conjunct consonant — naive slicing breaks this"},
+    {"id": 17, "input": "सँगै", "note": "unicode: chandrabindu combining character"},
+    {"id": 18, "input": "कृष्ण", "note": "unicode: vowel sign ri combining character"},
+    {"id": 19, "input": "राम स्कूल जान्छ 😊", "note": "emoji at end of sentence"},
+    {"id": 20, "input": "मलाई 😊 खाना 🍛 मन पर्छ", "note": "emojis mixed within sentence"}
 ]
