@@ -1,0 +1,36 @@
+# Seed Nepali gazetteer — one entity per line, format: TYPE|surface_form
+# TYPE is one of: PERSON, LOCATION, ORG
+# This is a small seed list for demo purposes, NOT exhaustive.
+
+LOCATION|काठमाडौं
+LOCATION|पोखरा
+LOCATION|चितवन
+LOCATION|भरतपुर
+LOCATION|ललितपुर
+LOCATION|भक्तपुर
+LOCATION|बिराटनगर
+LOCATION|धरान
+LOCATION|नेपालगन्ज
+LOCATION|जनकपुर
+LOCATION|नेपाल
+LOCATION|भारत
+LOCATION|चीन
+LOCATION|अमेरिका
+
+ORG|आइएसएमटी
+ORG|त्रिभुवन_विश्वविद्यालय
+ORG|काठमाडौं_विश्वविद्यालय
+ORG|नेपाल_सरकार
+ORG|संयुक्त_राष्ट्रसंघ
+
+PERSON|राम
+PERSON|श्याम
+PERSON|सीता
+PERSON|गीता
+PERSON|हरि
+PERSON|कृष्ण
+PERSON|बिपिन
+PERSON|बिबिध
+PERSON|बिप्रश
+PERSON|भीम
+PERSON|बिबेक
