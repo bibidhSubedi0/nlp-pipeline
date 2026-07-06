@@ -1,24 +1,24 @@
-REQUIRED_TOP_KEYS = {
-    "pipeline_id", "original_input", "current_text", "encoding",
-    "history", "metadata", "errors",
-}
-REQUIRED_METADATA_KEYS = {"language", "annotations", "confidence_scores"}
-REQUIRED_HISTORY_KEYS = {"module", "input", "output", "status", "timestamp", "meta"}
+"""
+Validates a pipeline envelope dict against schema/envelope_schema.json.
+
+Every module should call validate_envelope(envelope) before returning it,
+so a corrupted envelope shape is caught immediately instead of silently
+breaking three stages downstream.
+"""
+
+import json
+import os
+import jsonschema
+
+_SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "..", "schema", "envelope_schema.json")
+
+with open(_SCHEMA_PATH, encoding="utf-8") as f:
+    SCHEMA = json.load(f)
 
 
-def validate_envelope(envelope: dict) -> bool:
-    missing_top = REQUIRED_TOP_KEYS - envelope.keys()
-    if missing_top:
-        raise ValueError(f"Envelope missing top-level keys: {missing_top}")
-
-    meta = envelope.get("metadata", {})
-    missing_meta = REQUIRED_METADATA_KEYS - meta.keys()
-    if missing_meta:
-        raise ValueError(f"Envelope metadata missing keys: {missing_meta}")
-
-    for entry in envelope.get("history", []):
-        missing_history = REQUIRED_HISTORY_KEYS - entry.keys()
-        if missing_history:
-            raise ValueError(f"History entry missing keys: {missing_history}")
-
-    return True
+def validate_envelope(envelope: dict) -> None:
+    """
+    Raises jsonschema.exceptions.ValidationError if envelope doesn't match
+    the shared schema. Returns None (no return value) if valid.
+    """
+    jsonschema.validate(instance=envelope, schema=SCHEMA)

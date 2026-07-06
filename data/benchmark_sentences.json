@@ -1,12 +1,12 @@
 [
-    {"id": 1, "input": "राम स्कूल जान्छ", "note": "clean baseline sentence"},
-    {"id": 2, "input": "", "note": "empty input edge case"},
-    {"id": 3, "input": "   ", "note": "whitespace-only edge case"},
-    {"id": 4, "input": "म तीन बजे office जान्छु", "note": "mixed Nepali/English"},
-    {"id": 5, "input": "राम स्कुल जान्छ", "note": "spelling error variant"},
-    {"id": 6, "input": "नेपाल", "note": "single word"},
-    {"id": 7, "input": "आज मौसम धेरै राम्रो छ। हिजो भने वर्षा भएको थियो।", "note": "multi-sentence"},
-    {"id": 8, "input": "नेपालको राजधानी काठमाडौं हो", "note": "proper noun: Kathmandu"},
-    {"id": 9, "input": "म तिमीलाई माया गर्छु", "note": "common phrase"},
-    {"id": 10, "input": "बिद्यालय", "note": "common spelling error for विद्यालय"}
+  {"id": 1, "input": "नमस्ते, यो एक परीक्षण वाक्य हो।", "note": "baseline clean sentence, no punctuation/whitespace issues"},
+  {"id": 2, "input": "   राम    काठमाडौं   जान्छ  ।", "note": "irregular whitespace and space-before-danda, tests normalizer"},
+  {"id": 3, "input": "के तपाईं ठीक हुनुहुन्छ??", "note": "repeated punctuation, tests normalizer collapsing"},
+  {"id": 4, "input": "नमष्ते", "note": "single-character typo of a dictionary word, tests spellcheck suggestion"},
+  {"id": 5, "input": "अनौठो शब्द", "note": "word with no close dictionary match, tests spellcheck null suggestion path"},
+  {"id": 6, "input": "भीम काठमाडौं मा त्रिभुवन विश्वविद्यालय मा पढछ।", "note": "PERSON + LOCATION + multi-word ORG entity, tests ner gazetteer matching and non-overlap"},
+  {"id": 7, "input": "राम र श्याम काठमाडौं मा बस्छन्।", "note": "two PERSON entities plus one LOCATION, tests ner per-type counts"},
+  {"id": 8, "input": "", "note": "empty input, every module should record status skipped and produce zero errors"},
+  {"id": 9, "input": "यो एक साधारण वाक्य हो।", "note": "clean sentence with no gazetteer entities, tests ner empty-entities path"},
+  {"id": 10, "input": "त्रिभुवन विश्वविद्यालय", "note": "bare multi-word ORG entity with nothing else, tests span offsets equal full string"}
 ]
