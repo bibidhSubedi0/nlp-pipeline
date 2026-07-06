@@ -1,0 +1,12 @@
+[
+    {"id": 1, "input": "राम स्कूल जान्छ", "note": "clean baseline sentence"},
+    {"id": 2, "input": "", "note": "empty input edge case"},
+    {"id": 3, "input": "   ", "note": "whitespace-only edge case"},
+    {"id": 4, "input": "म तीन बजे office जान्छु", "note": "mixed Nepali/English"},
+    {"id": 5, "input": "राम स्कुल जान्छ", "note": "spelling error variant"},
+    {"id": 6, "input": "नेपाल", "note": "single word"},
+    {"id": 7, "input": "आज मौसम धेरै राम्रो छ। हिजो भने वर्षा भएको थियो।", "note": "multi-sentence"},
+    {"id": 8, "input": "नेपालको राजधानी काठमाडौं हो", "note": "proper noun: Kathmandu"},
+    {"id": 9, "input": "म तिमीलाई माया गर्छु", "note": "common phrase"},
+    {"id": 10, "input": "बिद्यालय", "note": "common spelling error for विद्यालय"}
+]
