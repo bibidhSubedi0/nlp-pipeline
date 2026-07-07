@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PipelineEnvelope",
+  "type": "object",
+  "required": ["pipeline_id", "original_input", "current_text", "encoding", "history", "metadata", "errors"],
+  "properties": {
+    "pipeline_id": { "type": "string" },
+    "original_input": { "type": "string" },
+    "current_text": { "type": "string" },
+    "encoding": { "type": "string", "const": "utf-8" },
+    "history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["module", "input", "output", "status", "timestamp"],
+        "properties": {
+          "module": { "type": "string" },
+          "input": { "type": "string" },
+          "output": { "type": "string" },
+          "status": { "type": "string", "enum": ["success", "failed", "skipped"] },
+          "timestamp": { "type": "string" },
+          "meta": { "type": "object" }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "language": { "type": "string" },
+        "annotations": { "type": "object" },
+        "confidence_scores": { "type": "object" }
+      }
+    },
+    "errors": {
+      "type": "array",
+      "items": { "type": "object" }
+    }
+  }
+}

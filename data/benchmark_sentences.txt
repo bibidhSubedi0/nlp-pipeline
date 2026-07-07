@@ -1,0 +1,2 @@
+# Nepali benchmark test sentences — Bibek to fill in with real test cases.
+नमस्ते, यो एक परीक्षण वाक्य हो।

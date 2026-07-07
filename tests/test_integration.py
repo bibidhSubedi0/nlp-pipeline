@@ -1,39 +1,65 @@
+"""
+Runs every sentence in data/benchmark_sentences.json through the full
+pipeline and asserts nothing crashes and every envelope is schema-valid.
+
+If Bibek appends new entries to benchmark_sentences.json, this test picks
+them up automatically — no code change needed here.
+
+Run with: pytest tests/test_integration.py -v
+      or: python3 run_tests.py
+"""
+
+import sys
+import os
 import json
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from orchestrator.orchestrator import run_pipeline
 from utils.envelope_factory import new_envelope
+from utils.validate_envelope import validate_envelope
 
-BENCHMARK_PATH = "data/benchmark_sentences.json"
-
-
-def test_full_pipeline_on_clean_sentence():
-    envelope = new_envelope("राम स्कूल जान्छ")
-    result = run_pipeline(envelope)
-    assert result["current_text"] != ""
-    assert len(result["history"]) > 0
-    assert all(
-        step["status"] in ("success", "failed", "skipped")
-        for step in result["history"]
-    )
+_BENCHMARK_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "benchmark_sentences.json")
 
 
-def test_full_pipeline_empty_input_does_not_crash():
-    envelope = new_envelope("")
-    result = run_pipeline(envelope)
-    assert isinstance(result, dict)
-
-
-def test_full_pipeline_whitespace_input_does_not_crash():
-    envelope = new_envelope("   ")
-    result = run_pipeline(envelope)
-    assert isinstance(result, dict)
+def _load_benchmark_set():
+    with open(_BENCHMARK_PATH, encoding="utf-8") as f:
+        return json.load(f)
 
 
 def test_benchmark_set_runs_without_exception():
-    with open(BENCHMARK_PATH, encoding="utf-8") as f:
-        cases = json.load(f)
+    sentences = _load_benchmark_set()
+    assert len(sentences) > 0, "benchmark_sentences.json should not be empty"
 
-    for case in cases:
-        envelope = new_envelope(case["input"])
+    for entry in sentences:
+        envelope = new_envelope(entry["input"])
         result = run_pipeline(envelope)
-        assert isinstance(result, dict), f"Failed on case {case['id']}: {case['note']}"
+        validate_envelope(result)  # raises on shape violations
+        assert result["errors"] == [], (
+            f"entry id={entry['id']} ({entry['note']}) produced errors: {result['errors']}"
+        )
+
+
+def test_benchmark_ids_are_unique():
+    sentences = _load_benchmark_set()
+    ids = [entry["id"] for entry in sentences]
+    assert len(ids) == len(set(ids)), "duplicate id found in benchmark_sentences.json"
+
+
+def test_benchmark_entries_have_required_fields():
+    sentences = _load_benchmark_set()
+    for entry in sentences:
+        assert "id" in entry
+        assert "input" in entry
+        assert "note" in entry
+        assert isinstance(entry["input"], str)
+
+
+if __name__ == "__main__":
+    tests = [f for name, f in list(globals().items()) if name.startswith("test_")]
+    passed = 0
+    for t in tests:
+        t()
+        passed += 1
+        print(f"PASS: {t.__name__}")
+    print(f"\n{passed}/{len(tests)} tests passed")
