@@ -54,3 +54,4 @@ cli.py            — demo REPL
 
 Complete
 
+test
