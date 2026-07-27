@@ -1,0 +1,127 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ModuleManifest",
+  "description": "Schema for module provider -> pipeline communication. A provider fills this out to register their module.",
+  "type": "object",
+  "required": ["module_id", "name", "version", "provider_type", "config"],
+  "properties": {
+    "module_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]*$",
+      "description": "Unique snake_case identifier, e.g. 'sentiment-hf'"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable display name"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version (major.minor.patch)"
+    },
+    "provider_type": {
+      "type": "string",
+      "enum": ["huggingface", "code", "api"],
+      "description": "How the module is provided to the pipeline"
+    },
+    "description": {
+      "type": "string",
+      "default": ""
+    },
+    "language": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": ["ne"],
+      "description": "ISO 639-1 codes for languages this module supports"
+    },
+    "behavior": {
+      "type": "string",
+      "enum": ["annotate", "mutate"],
+      "default": "annotate",
+      "description": "'annotate' = writes to metadata only; 'mutate' = may rewrite current_text"
+    },
+    "annotations_key": {
+      "type": "string",
+      "description": "Key under envelope['metadata']['annotations'] where output is written"
+    },
+    "config": {
+      "type": "object",
+      "description": "Provider-type-specific configuration (see sub-schemas below)",
+      "properties": {
+        "model": {
+          "type": "string",
+          "description": "[huggingface] Model ID from HuggingFace Hub"
+        },
+        "task": {
+          "type": "string",
+          "description": "[huggingface] Pipeline task, e.g. 'text-classification'"
+        },
+        "device": {
+          "type": "string",
+          "enum": ["cpu", "cuda", "auto"],
+          "default": "cpu",
+          "description": "[huggingface] Compute device"
+        },
+        "max_length": {
+          "type": "integer",
+          "default": 512,
+          "description": "[huggingface] Max token length for model input"
+        },
+        "entry_point": {
+          "type": "string",
+          "description": "[code] Dotted import path, e.g. 'modules.sentiment_analyzer'"
+        },
+        "endpoint": {
+          "type": "string",
+          "format": "uri",
+          "description": "[api] URL to POST the envelope to"
+        },
+        "method": {
+          "type": "string",
+          "enum": ["POST", "PUT"],
+          "default": "POST",
+          "description": "[api] HTTP method"
+        },
+        "headers": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "default": {},
+          "description": "[api] Extra HTTP headers (e.g. auth tokens)"
+        },
+        "timeout": {
+          "type": "integer",
+          "default": 30,
+          "description": "[api] Request timeout in seconds"
+        },
+        "response_annotations_field": {
+          "type": "string",
+          "description": "[api] Dot-separated path in response JSON to extract annotations, e.g. 'result.sentiment'"
+        },
+        "response_confidence_field": {
+          "type": "string",
+          "description": "[api] Dot-separated path in response JSON to extract confidence, e.g. 'result.score'"
+        }
+      },
+      "required": [],
+      "anyOf": [
+        { "required": ["model"] },
+        { "required": ["entry_point"] },
+        { "required": ["endpoint"] }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "provider_type": { "const": "huggingface" } } },
+      "then": { "properties": { "config": { "required": ["model"] } } }
+    },
+    {
+      "if": { "properties": { "provider_type": { "const": "code" } } },
+      "then": { "properties": { "config": { "required": ["entry_point"] } } }
+    },
+    {
+      "if": { "properties": { "provider_type": { "const": "api" } } },
+      "then": { "properties": { "config": { "required": ["endpoint"] } } }
+    }
+  ]
+}

@@ -1,6 +1,66 @@
-# Envelope Schema
+# Communication Schema
 
-Every module receives and returns this dict:
+## Two-party architecture
+
+```
+  Module Provider (HuggingFace / code author / API host)
+        |
+        |  manifest JSON  (module_schema.json)
+        |  + adapter      (code / huggingface / api)
+        v
+  Registry  ──────>  Adapter.process(envelope)  ──────>  Pipeline
+                         |
+                    same envelope dict contract as native modules
+```
+
+The pipeline does not know or care whether a module came from a local
+Python file, HuggingFace Hub, or a remote API. The registry + adapter
+system normalizes all three into the same `process(envelope) -> dict`
+interface.
+
+## Module Manifest (what a provider gives us)
+
+A provider fills out a JSON manifest validated against
+`schema/module_schema.json`. Required fields:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `module_id` | string | Unique snake_case ID, e.g. `sentiment-hf` |
+| `name` | string | Human-readable name |
+| `version` | string | Semantic version `major.minor.patch` |
+| `provider_type` | enum | `"huggingface"`, `"code"`, or `"api"` |
+| `config` | object | Provider-type-specific config (see below) |
+
+Optional fields: `description`, `language` (ISO 639-1 codes),
+`behavior` (`"annotate"` or `"mutate"`), `annotations_key`.
+
+### Config by provider type
+
+**`code`** — provider ships a Python module with `process(envelope)`:
+```json
+{ "entry_point": "modules.sentiment_analyzer" }
+```
+
+**`huggingface`** — provider specifies a HuggingFace model:
+```json
+{ "model": "cardiffnlp/twitter-xlm-roberta-base-sentiment", "task": "text-classification", "device": "cpu" }
+```
+
+**`api`** — provider exposes an HTTP endpoint:
+```json
+{
+  "endpoint": "http://localhost:5001/sentiment",
+  "method": "POST",
+  "timeout": 30,
+  "response_annotations_field": "sentiment",
+  "response_confidence_field": "score"
+}
+```
+
+The API adapter sends the full envelope as `POST { "envelope": <envelope> }`
+and reads results back from the response JSON using dot-path field resolution.
+
+## Envelope Schema (per-module data contract)
 
 | Key | Type | Required | Mutability |
 |-----|------|----------|------------|
@@ -76,3 +136,40 @@ yourself first.
 | Add a test function that takes arguments | `run_tests.py` and `pytest` both call `fn()` → `TypeError` |
 | Use pytest-only fixtures (`monkeypatch`, `tmpdir`, etc.) | Test passes in pytest but fails in `run_tests.py` |
 | Change `utils/validate_envelope.py`'s required fields | Existing modules that passed validation now fail |
+
+## CLI Reference
+
+```
+python3 cli.py run <text>              Run full pipeline + registered modules
+python3 cli.py run --file <path>       Run on file contents
+python3 cli.py list                    List registered modules
+python3 cli.py register <manifest.json>  Register a module from manifest
+python3 cli.py remove <module_id>      Unregister a module
+python3 cli.py config                  Show pipeline configuration
+python3 cli.py demo                    Sentiment analysis demo (REPL)
+python3 cli.py interactive             Interactive REPL mode
+```
+
+## Provider quick-start
+
+### 1. Code provider (simplest)
+Write a Python file with `process(envelope: dict) -> dict`. Register it:
+```bash
+python3 cli.py register manifests/sentiment_code.json
+```
+
+### 2. HuggingFace provider
+Fill out `manifests/sentiment_huggingface.json` with your model ID.
+Requires `pip install transformers torch`.
+
+### 3. API provider
+Deploy your model behind an HTTP endpoint. Fill out
+`manifests/sentiment_api.json` with the endpoint URL. The adapter
+sends `{ "envelope": <envelope> }` and reads results from the response.
+
+Start the mock server for testing:
+```bash
+python3 scripts/mock_sentiment_server.py  # runs on :5001
+python3 cli.py register manifests/sentiment_api.json
+python3 cli.py run "This is great!"
+```

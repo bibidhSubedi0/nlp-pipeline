@@ -1,0 +1,18 @@
+{
+  "module_id": "sentiment-api",
+  "name": "Sentiment Analyzer (API)",
+  "version": "1.0.0",
+  "provider_type": "api",
+  "description": "Sentiment via external REST API. Requires a running sentiment server.",
+  "language": ["en", "ne"],
+  "behavior": "annotate",
+  "annotations_key": "sentiment",
+  "config": {
+    "endpoint": "http://localhost:5001/sentiment",
+    "method": "POST",
+    "headers": {},
+    "timeout": 10,
+    "response_annotations_field": "sentiment",
+    "response_confidence_field": "score"
+  }
+}

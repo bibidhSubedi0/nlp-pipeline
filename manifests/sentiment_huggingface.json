@@ -1,0 +1,16 @@
+{
+  "module_id": "sentiment-hf",
+  "name": "Sentiment Analyzer (HuggingFace)",
+  "version": "1.0.0",
+  "provider_type": "huggingface",
+  "description": "Multi-lingual sentiment via XLM-RoBERTa. Requires transformers + torch.",
+  "language": ["en", "ne", "hi"],
+  "behavior": "annotate",
+  "annotations_key": "sentiment",
+  "config": {
+    "model": "cardiffnlp/twitter-xlm-roberta-base-sentiment",
+    "task": "text-classification",
+    "device": "cpu",
+    "max_length": 512
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "module_id": "sentiment-code",
+  "name": "Sentiment Analyzer (Built-in)",
+  "version": "1.0.0",
+  "provider_type": "code",
+  "description": "Keyword-based sentiment analysis for English and Nepali. No ML required.",
+  "language": ["en", "ne"],
+  "behavior": "annotate",
+  "annotations_key": "sentiment",
+  "config": {
+    "entry_point": "modules.sentiment_analyzer"
+  }
+}
