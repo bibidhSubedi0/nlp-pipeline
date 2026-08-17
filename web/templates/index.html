@@ -23,8 +23,7 @@
   <h1>Analyze Nepali &amp; English text</h1>
   <p>
     Text flows through
-    {% for m in active_modules %}<code>{{ module_short(m) }}</code>{% if not loop.last %}<span class="arrow">→</span>{% endif %}{% endfor %}
-    <span class="arrow">→</span><code>extensions</code>
+    {% for m in active_steps %}<code>{{ step_label(m) }}</code>{% if not loop.last %}<span class="arrow">→</span>{% endif %}{% endfor %}
     with a full audit trail of every stage.
   </p>
 </section>

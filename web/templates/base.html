@@ -44,7 +44,7 @@
   <footer class="site-footer">
     <div class="container">
       <p>Modular NLP Pipeline — Bibidh Subedi · Biprash Pandey · Bhim Prasad Upadhaya · Bibek Gautam</p>
-      <p class="footer-meta">Pipeline: {% for m in active_modules %}<code>{{ module_short(m) }}</code>{% if not loop.last %} → {% endif %}{% endfor %} → extensions</p>
+      <p class="footer-meta">Pipeline: {% for s in active_steps %}<code>{{ step_label(s) }}</code>{% if not loop.last %} → {% endif %}{% endfor %}</p>
     </div>
   </footer>
 

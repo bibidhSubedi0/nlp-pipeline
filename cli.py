@@ -7,14 +7,20 @@ Commands:
   python cli.py run --file <path>       Run the pipeline on a file
   python cli.py list                    List registered modules
   python cli.py register <manifest>     Register a module from a JSON manifest
+  python cli.py upload <file.py>        Upload a Python module and add it to the pipeline
   python cli.py remove <module_id>      Unregister a module
   python cli.py config                  Show current pipeline configuration
+  python cli.py enable <module_id>      Add a module to the pipeline
+  python cli.py disable <module_id>     Remove a module from the pipeline
+  python cli.py move <module_id> <up|down>  Reorder a module in the pipeline
   python cli.py demo                    Run the sentiment analysis demo
   python cli.py interactive             Interactive REPL mode
 """
 
 import argparse
+import importlib
 import json
+import re
 import sys
 import os
 
@@ -23,10 +29,13 @@ sys.path.insert(0, os.path.dirname(__file__))
 from utils.envelope_factory import new_envelope
 from utils.validate_envelope import validate_envelope
 from orchestrator.orchestrator import run_pipeline
+from orchestrator.config import is_native_step, pipeline_config, step_label
 from registry.registry import Registry
 from utils.logger import get_logger
 
 log = get_logger("cli")
+
+_MODULE_ID_RE = re.compile(r"^[a-z][a-z0-9_-]*$")
 
 LABELS = {
     "positive": "\033[92m+\033[0m",
@@ -85,8 +94,17 @@ def _ensure_builtins(registry):
                 pass
 
 
-def cmd_run(args, registry):
+def _bootstrap(registry):
+    """First-run bootstrap: register built-ins and enable sentiment if the
+    pipeline config has never been saved (mirrors the web UI behaviour)."""
     _ensure_builtins(registry)
+    if not pipeline_config.file_exists:
+        if registry.get_manifest("sentiment-code") is not None:
+            pipeline_config.enable("sentiment-code")
+
+
+def cmd_run(args, registry):
+    _bootstrap(registry)
     if args.file:
         with open(args.file, encoding="utf-8") as f:
             text = f.read().strip()
@@ -99,16 +117,8 @@ def cmd_run(args, registry):
 
     envelope = new_envelope(text, language=args.lang)
 
-    # Run the core pipeline (normalizer -> spellcheck -> ner)
-    result = run_pipeline(envelope)
-
-    # Run any registered modules (e.g. sentiment)
-    for manifest in registry.list_modules():
-        try:
-            adapter = registry.load(manifest["module_id"])
-            result = adapter.process(result)
-        except Exception as e:
-            print(f"  [err] {manifest['module_id']}: {e}", file=sys.stderr)
+    # One ordered step list: native modules + enabled registry modules.
+    result = run_pipeline(envelope, registry=registry)
 
     _print_result(result)
 
@@ -148,40 +158,137 @@ def cmd_register(args, registry):
 
 
 def cmd_remove(args, registry):
+    manifest = registry.get_manifest(args.module_id) or {}
+    entry_point = manifest.get("config", {}).get("entry_point", "")
     if registry.remove(args.module_id):
+        pipeline_config.disable(args.module_id)
+        if entry_point == f"modules.{args.module_id}":
+            target = os.path.join(os.path.dirname(__file__),
+                                  "modules", f"{args.module_id}.py")
+            try:
+                os.remove(target)
+            except OSError:
+                pass
         print(f"Removed: {args.module_id}")
     else:
         print(f"Module '{args.module_id}' not found.", file=sys.stderr)
         sys.exit(1)
 
 
-def cmd_config(args, registry):
-    from orchestrator.config import ACTIVE_MODULES
-    print("\nCore pipeline stages:")
-    for i, mod in enumerate(ACTIVE_MODULES, 1):
-        print(f"  {i}. {mod}")
+def cmd_upload(args, registry):
+    _ensure_builtins(registry)
+    path = args.file
+    with open(path, encoding="utf-8") as f:
+        source = f.read()
 
-    modules = registry.list_modules()
-    if modules:
-        print("\nRegistered extensions:")
-        for m in modules:
-            print(f"  - {m['module_id']} ({m['provider_type']}) v{m['version']}")
+    module_id = args.module_id or os.path.splitext(os.path.basename(path))[0]
+    module_id = module_id.lower().replace(" ", "-")
+    if not _MODULE_ID_RE.match(module_id):
+        print(f"Error: invalid module_id '{module_id}'. Use [a-z][a-z0-9_-]*",
+              file=sys.stderr)
+        sys.exit(1)
+    if registry.get_manifest(module_id) is not None:
+        print(f"Error: module '{module_id}' is already registered.", file=sys.stderr)
+        sys.exit(1)
+
+    target = os.path.join(os.path.dirname(__file__), "modules", f"{module_id}.py")
+    if os.path.exists(target):
+        print(f"Error: modules/{module_id}.py already exists.", file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        compile(source, f"{module_id}.py", "exec")
+    except SyntaxError as e:
+        print(f"Error: syntax error in uploaded file: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    with open(target, "w", encoding="utf-8") as f:
+        f.write(source)
+
+    try:
+        mod = importlib.import_module(f"modules.{module_id}")
+        if not callable(getattr(mod, "process", None)):
+            raise ValueError("module does not expose a process(envelope) function")
+    except Exception as e:
+        os.remove(target)
+        print(f"Error: uploaded module failed to load: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    manifest = {
+        "module_id": module_id,
+        "name": args.name or module_id,
+        "version": "1.0.0",
+        "provider_type": "code",
+        "description": "Uploaded via CLI",
+        "language": ["ne"],
+        "behavior": "annotate",
+        "annotations_key": module_id,
+        "config": {"entry_point": f"modules.{module_id}"},
+    }
+    registry.register(manifest)
+    pipeline_config.enable(module_id)
+    print(f"Uploaded and enabled in pipeline: {module_id}")
+
+
+def cmd_enable(args, registry):
+    step = args.module_id
+    if registry.get_manifest(step) is None and not is_native_step(step):
+        print(f"Error: '{step}' is not a registered module or native module.",
+              file=sys.stderr)
+        sys.exit(1)
+    if pipeline_config.enable(step):
+        print(f"Added to pipeline: {step}")
     else:
-        print("\nNo registered extensions.")
+        print(f"Already in pipeline: {step}")
+
+
+def cmd_disable(args, registry):
+    if pipeline_config.disable(args.module_id):
+        print(f"Removed from pipeline: {args.module_id}")
+    else:
+        print(f"Not in pipeline: {args.module_id}")
+
+
+def cmd_move(args, registry):
+    if args.direction not in ("up", "down"):
+        print("Error: direction must be 'up' or 'down'.", file=sys.stderr)
+        sys.exit(1)
+    if pipeline_config.move(args.module_id, args.direction):
+        print(f"Moved {args.module_id} {args.direction}.")
+    else:
+        print(f"Could not move {args.module_id} {args.direction}.", file=sys.stderr)
+        sys.exit(1)
+
+
+def cmd_config(args, registry):
+    print("\nActive pipeline (in order):")
+    steps = pipeline_config.get_active_steps()
+    if not steps:
+        print("  (empty — no modules enabled)")
+    for i, mod in enumerate(steps, 1):
+        marker = "" if is_native_step(mod) else " [extension]"
+        print(f"  {i}. {mod}{marker}")
+
+    registered = {m["module_id"] for m in registry.list_modules()}
+    print("\nRegistered modules:")
+    if registered:
+        for mid in sorted(registered):
+            status = "enabled" if mid in steps else "disabled"
+            print(f"  - {mid} ({status})")
+    else:
+        print("  (none)")
+
+    print(f"\nConfig file: {pipeline_config.path}")
+    if not pipeline_config.file_exists:
+        print("  (not saved yet — defaults in use; any enable/disable/move creates it)")
     print()
 
 
 def cmd_demo(args, registry):
-    # Auto-register the built-in sentiment module if not already present
-    manifest_path = os.path.join(os.path.dirname(__file__), "manifests", "sentiment_code.json")
-    if registry.get_manifest("sentiment-code") is None:
-        with open(manifest_path, encoding="utf-8") as f:
-            manifest = json.load(f)
-        registry.register(manifest)
-        print("Registered built-in sentiment analyzer.\n")
+    _bootstrap(registry)
 
-    from orchestrator.config import ACTIVE_MODULES
-    stages = " -> ".join(m.split(".")[-1] for m in ACTIVE_MODULES) + " -> sentiment"
+    from orchestrator.config import pipeline_config
+    stages = " -> ".join(step_label(s) for s in pipeline_config.get_active_steps())
     print("=" * 60)
     print("  NLP Pipeline: Sentiment Analysis Demo")
     print(f"  Pipeline: {stages}")
@@ -221,15 +328,13 @@ def cmd_demo(args, registry):
             continue
 
         envelope = new_envelope(text)
-        result = run_pipeline(envelope)
-
-        adapter = registry.load("sentiment-code")
-        result = adapter.process(result)
+        result = run_pipeline(envelope, registry=registry)
 
         _print_result(result)
 
 
 def cmd_interactive(args, registry):
+    _bootstrap(registry)
     print("=== NLP Pipeline Interactive Mode ===")
     print("Commands: 'list' modules, 'config' pipeline, 'quit' to exit\n")
 
@@ -252,14 +357,7 @@ def cmd_interactive(args, registry):
             continue
 
         envelope = new_envelope(text)
-        result = run_pipeline(envelope)
-
-        for manifest in registry.list_modules():
-            try:
-                adapter = registry.load(manifest["module_id"])
-                result = adapter.process(result)
-            except Exception as e:
-                print(f"  [err] {manifest['module_id']}: {e}")
+        result = run_pipeline(envelope, registry=registry)
 
         _print_result(result)
 
@@ -285,7 +383,22 @@ def main():
     p_rem = sub.add_parser("remove", help="Remove a registered module")
     p_rem.add_argument("module_id", help="Module ID to remove")
 
+    p_up = sub.add_parser("upload", help="Upload a Python module file and add it to the pipeline")
+    p_up.add_argument("file", help="Path to the .py module file")
+    p_up.add_argument("--module-id", dest="module_id", help="module_id (default: file name)")
+    p_up.add_argument("--name", default=None, help="Display name (default: module_id)")
+
     sub.add_parser("config", help="Show current pipeline configuration")
+
+    p_en = sub.add_parser("enable", help="Add a module to the pipeline")
+    p_en.add_argument("module_id", help="Native dotted path or registry module ID")
+
+    p_dis = sub.add_parser("disable", help="Remove a module from the pipeline")
+    p_dis.add_argument("module_id", help="Native dotted path or registry module ID")
+
+    p_mv = sub.add_parser("move", help="Reorder a module in the pipeline")
+    p_mv.add_argument("module_id", help="Native dotted path or registry module ID")
+    p_mv.add_argument("direction", choices=["up", "down"], help="Direction to move")
 
     sub.add_parser("demo", help="Run the sentiment analysis demo")
 
@@ -303,8 +416,12 @@ def main():
         "run": cmd_run,
         "list": cmd_list,
         "register": cmd_register,
+        "upload": cmd_upload,
         "remove": cmd_remove,
         "config": cmd_config,
+        "enable": cmd_enable,
+        "disable": cmd_disable,
+        "move": cmd_move,
         "demo": cmd_demo,
         "interactive": cmd_interactive,
     }
@@ -317,4 +434,8 @@ def main():
 
 
 if __name__ == "__main__":
+    # Windows consoles often default to cp1252, which cannot encode the
+    # Devanagari text the pipeline outputs. Reconfigure to UTF-8.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     main()

@@ -607,6 +607,7 @@ mark.ent {
 
 .flash-success { background: var(--green-soft); color: #166534; border-color: #bbf7d0; }
 .flash-error { background: var(--red-soft); color: #991b1b; border-color: #fecaca; }
+.flash-info { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
 
 /* ---------- modules page ---------- */
 
@@ -681,3 +682,31 @@ mark.ent {
 .stage-name { font-weight: 700; font-family: var(--mono); font-size: 14px; }
 
 .stage-desc { color: var(--text-muted); font-size: 13.5px; margin-top: 2px; }
+
+.stage-body { flex: 1; }
+
+.stage-controls { display: flex; gap: 8px; margin-top: 8px; }
+
+.stage-controls .btn[disabled] { opacity: .4; cursor: not-allowed; }
+
+.upload-card { border-color: var(--green); }
+
+.upload-fields { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.upload-fields input {
+  flex: 1;
+  min-width: 180px;
+  font-family: var(--sans);
+  font-size: 13.5px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text);
+}
+
+.upload-fields input:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, .15);
+}

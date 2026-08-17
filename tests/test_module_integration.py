@@ -38,12 +38,18 @@ def test_spellcheck_feeds_into_normalizer():
 
 
 def test_ner_receives_normalizer_and_spellcheck_output():
-    envelope = new_envelope("राम   काठमाडौं   जान्छ")
-    result = run_pipeline(envelope)
+    import orchestrator.config as config
+    original = list(config.ACTIVE_MODULES)
+    try:
+        config.ACTIVE_MODULES[:] = config.DEFAULT_CORE_MODULES
+        envelope = new_envelope("राम   काठमाडौं   जान्छ")
+        result = run_pipeline(envelope)
 
-    module_names = [step["module"] for step in result["history"]]
-    assert module_names == ["normalizer", "spellcheck", "ner"]
-    assert all(step["status"] != "failed" for step in result["history"])
+        module_names = [step["module"] for step in result["history"]]
+        assert module_names == ["normalizer", "spellcheck", "ner"]
+        assert all(step["status"] != "failed" for step in result["history"])
+    finally:
+        config.ACTIVE_MODULES[:] = original
 
 
 def test_envelope_required_keys_survive_full_pipeline():

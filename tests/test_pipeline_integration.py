@@ -31,10 +31,19 @@ def test_full_pipeline_output_matches_schema():
 
 
 def test_all_three_stages_run_in_order():
-    envelope = new_envelope("राम काठमाडौं जान्छ।")
-    result = run_pipeline(envelope)
-    modules_run = [entry["module"] for entry in result["history"]]
-    assert modules_run == ["normalizer", "spellcheck", "ner"]
+    # The pipeline is runtime-configurable now, so pin it to the core
+    # default for this exact-order assertion (a saved pipeline_config.json
+    # must not change what this test expects).
+    import orchestrator.config as config
+    original = list(config.ACTIVE_MODULES)
+    try:
+        config.ACTIVE_MODULES[:] = config.DEFAULT_CORE_MODULES
+        envelope = new_envelope("राम काठमाडौं जान्छ।")
+        result = run_pipeline(envelope)
+        modules_run = [entry["module"] for entry in result["history"]]
+        assert modules_run == ["normalizer", "spellcheck", "ner"]
+    finally:
+        config.ACTIVE_MODULES[:] = original
 
 
 def test_normalization_happens_before_downstream_stages_see_text():

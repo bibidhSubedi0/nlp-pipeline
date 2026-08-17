@@ -6,13 +6,34 @@
 <section class="hero">
   <h1>Module registry</h1>
   <p>
-    Extension modules run after the core pipeline. Any provider — Python code,
-    a HuggingFace model, or a remote API — plugs in with a single JSON manifest.
+    Upload a new Python module or register one with a JSON manifest. Any
+    provider — Python code, a HuggingFace model, or a remote API — plugs in
+    with a single manifest. Uploaded modules are added to the pipeline
+    automatically; registered ones you enable on the
+    <a href="{{ url_for('config') }}">Config</a> page.
   </p>
 </section>
 
+<div class="card upload-card">
+  <div class="card-head"><h2>Upload a new module</h2></div>
+  <form method="post" action="{{ url_for('upload_module') }}" enctype="multipart/form-data" class="register-form">
+    <div class="form-row">
+      <label class="file-input">
+        <span>Choose a .py file (must expose <code>process(envelope) -> envelope</code>)…</span>
+        <input type="file" name="module_file" accept=".py">
+      </label>
+      <div class="upload-fields">
+        <input type="text" name="module_id" placeholder="module_id (optional — defaults to file name)">
+        <input type="text" name="name" placeholder="Display name (optional)">
+        <input type="text" name="description" placeholder="Short description (optional)">
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Upload &amp; add to pipeline</button>
+  </form>
+</div>
+
 <div class="card register-card">
-  <div class="card-head"><h2>Register a module</h2></div>
+  <div class="card-head"><h2>Register a module by manifest</h2></div>
   <form method="post" action="{{ url_for('register_module') }}" enctype="multipart/form-data" class="register-form">
     <div class="form-row">
       <label class="file-input">
@@ -45,8 +66,7 @@
         <th>Module</th>
         <th>Type</th>
         <th>Version</th>
-        <th>Languages</th>
-        <th>Behavior</th>
+        <th>Pipeline</th>
         <th>Actions</th>
       </tr>
     </thead>
@@ -60,8 +80,21 @@
         </td>
         <td><span class="tag tag-provider">{{ m.provider_type }}</span></td>
         <td class="mono">{{ m.version }}</td>
-        <td class="mono">{% for lang in (m.language or []) %}{{ lang }}{% if not loop.last %}, {% endif %}{% endfor %}</td>
-        <td class="mono">{{ m.behavior or 'annotate' }}</td>
+        <td>
+          {% if m.module_id in enabled_steps %}
+            <span class="mini-badge">in pipeline</span>
+            <form method="post" action="{{ url_for('config_disable') }}" class="inline-form">
+              <input type="hidden" name="step_id" value="{{ m.module_id }}">
+              <button type="submit" class="btn btn-ghost btn-sm">Disable</button>
+            </form>
+          {% else %}
+            <span class="mini-badge muted">not in pipeline</span>
+            <form method="post" action="{{ url_for('config_enable') }}" class="inline-form">
+              <input type="hidden" name="step_id" value="{{ m.module_id }}">
+              <button type="submit" class="btn btn-primary btn-sm">Enable</button>
+            </form>
+          {% endif %}
+        </td>
         <td class="actions">
           <form method="post" action="{{ url_for('test_module') }}" class="inline-form">
             <input type="hidden" name="module_id" value="{{ m.module_id }}">
@@ -78,7 +111,7 @@
     </tbody>
   </table>
   {% else %}
-  <p class="empty-note">No modules registered. Register the built-in sentiment analyzer or your own manifest above.</p>
+  <p class="empty-note">No modules registered. Upload a module or register a manifest above.</p>
   {% endif %}
 </div>
 {% endblock %}

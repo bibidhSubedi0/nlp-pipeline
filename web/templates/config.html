@@ -5,50 +5,101 @@
 {% block content %}
 <section class="hero">
   <h1>Pipeline configuration</h1>
-  <p>The core stages run in this order, then every registered extension module runs last.</p>
+  <p>
+    Choose which modules run and in what order. Native modules and registered
+    extensions share one pipeline — changes apply to the next analysis, no
+    code edits or restarts needed.
+  </p>
 </section>
 
 <div class="card">
   <div class="card-head">
-    <h2>Core stages</h2>
-    <span class="mono muted">orchestrator/config.py</span>
+    <h2>Active pipeline</h2>
+    <span class="mini-badge">{{ enabled_count }} step{{ 's' if enabled_count != 1 else '' }} enabled</span>
   </div>
+
+  {% if rows %}
   <ol class="stage-list">
-    {% for m in active_modules %}
-    <li>
-      <div class="stage-idx">{{ loop.index }}</div>
-      <div>
-        <div class="stage-name mono">{{ m }}</div>
-        <div class="stage-desc">{{ module_descriptions.get(m, 'No description.') }}</div>
-      </div>
-    </li>
+    {% for row in rows %}
+      {% if row.enabled %}
+      <li>
+        <div class="stage-idx">{{ loop.index }}</div>
+        <div class="stage-body">
+          <div class="stage-name mono">{{ row.label }}</div>
+          <div class="step-meta">
+            <span class="tag {{ 'tag-provider' if row.tag == 'extension' else '' }}">{{ row.kind }}</span>
+            <span class="mod-desc">{{ row.desc }}</span>
+          </div>
+          <div class="stage-controls">
+            <form method="post" action="{{ url_for('config_move') }}" class="inline-form">
+              <input type="hidden" name="step_id" value="{{ row.id }}">
+              <input type="hidden" name="direction" value="up">
+              <button type="submit" class="btn btn-ghost btn-sm" {{ 'disabled' if loop.first else '' }}>↑ Up</button>
+            </form>
+            <form method="post" action="{{ url_for('config_move') }}" class="inline-form">
+              <input type="hidden" name="step_id" value="{{ row.id }}">
+              <input type="hidden" name="direction" value="down">
+              <button type="submit" class="btn btn-ghost btn-sm" {{ 'disabled' if loop.last else '' }}>↓ Down</button>
+            </form>
+            <form method="post" action="{{ url_for('config_disable') }}" class="inline-form">
+              <input type="hidden" name="step_id" value="{{ row.id }}">
+              <button type="submit" class="btn btn-danger btn-sm">Disable</button>
+            </form>
+          </div>
+        </div>
+      </li>
+      {% endif %}
     {% endfor %}
   </ol>
+  {% else %}
+  <p class="empty-note">No steps enabled — the pipeline will do nothing until you enable modules below.</p>
+  {% endif %}
 </div>
 
 <div class="card">
   <div class="card-head">
-    <h2>Registered extensions</h2>
-    <span class="mini-badge">{{ modules | length }} registered</span>
+    <h2>Available modules</h2>
+    <span class="mini-badge muted">not in pipeline</span>
   </div>
-  {% if modules %}
+
+  {% set disabled_rows = rows | rejectattr('enabled') | list %}
+  {% if disabled_rows %}
   <table class="module-table">
     <thead>
-      <tr><th>Module</th><th>Type</th><th>Version</th><th>Annotations key</th></tr>
+      <tr><th>Module</th><th>Type</th><th></th></tr>
     </thead>
     <tbody>
-      {% for m in modules %}
+      {% for row in disabled_rows %}
       <tr>
-        <td><span class="mod-name">{{ m.name }}</span> <span class="mono muted">{{ m.module_id }}</span></td>
-        <td><span class="tag tag-provider">{{ m.provider_type }}</span></td>
-        <td class="mono">{{ m.version }}</td>
-        <td class="mono">{{ m.annotations_key or m.module_id }}</td>
+        <td>
+          <div class="mod-name">{{ row.label }}</div>
+          <div class="mono muted">{{ row.id }}</div>
+          <div class="mod-desc">{{ row.desc }}</div>
+        </td>
+        <td><span class="tag {{ 'tag-provider' if row.tag == 'extension' else '' }}">{{ row.kind }}</span></td>
+        <td class="actions">
+          <form method="post" action="{{ url_for('config_enable') }}" class="inline-form">
+            <input type="hidden" name="step_id" value="{{ row.id }}">
+            <button type="submit" class="btn btn-primary btn-sm">Enable</button>
+          </form>
+        </td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
   {% else %}
-  <p class="empty-note">No extensions registered.</p>
+  <p class="empty-note">All known modules are already in the pipeline.</p>
   {% endif %}
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>How this works</h2></div>
+  <p class="empty-note">
+    Your choices are saved to <code class="mono">{{ config_path }}</code>.
+    The pipeline runs exactly the steps listed above, in order. To add a
+    brand-new module, register or upload it on the
+    <a href="{{ url_for('modules') }}">Modules</a> page first — it will
+    appear here once registered.
+  </p>
 </div>
 {% endblock %}

@@ -208,6 +208,9 @@ tempCodeRunnerFile.py
 # Ruff stuff:
 .ruff_cache/
 
+# Runtime pipeline configuration (which modules are enabled/ordered)
+orchestrator/pipeline_config.json
+
 # PyPI configuration file
 .pypirc
 
