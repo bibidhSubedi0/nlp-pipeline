@@ -18,6 +18,21 @@ python cli.py
 Type a Nepali sentence, press Enter. The pipeline runs every active module
 in sequence and shows the result. Type `quit` to exit.
 
+## Web UI
+
+```bash
+python run_web.py
+```
+
+Then open http://127.0.0.1:5000 in your browser.
+
+- **Analyze** — run any Nepali/English text through the pipeline with
+  sentiment, NER highlighting, spellcheck suggestions, stage-by-stage
+  audit trail, and the full envelope JSON
+- **Modules** — register extension modules from a manifest file or pasted
+  JSON, test them, and remove them
+- **Config** — view the active pipeline order and registered extensions
+
 ## Run Tests
 
 ```bash
@@ -35,6 +50,8 @@ utils/            — shared envelope factory, schema validator, logger
 tests/            — unit + integration tests
 data/             — benchmark sentences
 cli.py            — demo REPL
+run_web.py        — web UI entry point (Flask)
+web/              — Flask app: templates, static assets, pipeline runner
 ```
 
 ## Adding a Module

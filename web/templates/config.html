@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Config — NLP Pipeline{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <h1>Pipeline configuration</h1>
+  <p>The core stages run in this order, then every registered extension module runs last.</p>
+</section>
+
+<div class="card">
+  <div class="card-head">
+    <h2>Core stages</h2>
+    <span class="mono muted">orchestrator/config.py</span>
+  </div>
+  <ol class="stage-list">
+    {% for m in active_modules %}
+    <li>
+      <div class="stage-idx">{{ loop.index }}</div>
+      <div>
+        <div class="stage-name mono">{{ m }}</div>
+        <div class="stage-desc">{{ module_descriptions.get(m, 'No description.') }}</div>
+      </div>
+    </li>
+    {% endfor %}
+  </ol>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <h2>Registered extensions</h2>
+    <span class="mini-badge">{{ modules | length }} registered</span>
+  </div>
+  {% if modules %}
+  <table class="module-table">
+    <thead>
+      <tr><th>Module</th><th>Type</th><th>Version</th><th>Annotations key</th></tr>
+    </thead>
+    <tbody>
+      {% for m in modules %}
+      <tr>
+        <td><span class="mod-name">{{ m.name }}</span> <span class="mono muted">{{ m.module_id }}</span></td>
+        <td><span class="tag tag-provider">{{ m.provider_type }}</span></td>
+        <td class="mono">{{ m.version }}</td>
+        <td class="mono">{{ m.annotations_key or m.module_id }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty-note">No extensions registered.</p>
+  {% endif %}
+</div>
+{% endblock %}

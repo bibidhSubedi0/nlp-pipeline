@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Modules — NLP Pipeline{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <h1>Module registry</h1>
+  <p>
+    Extension modules run after the core pipeline. Any provider — Python code,
+    a HuggingFace model, or a remote API — plugs in with a single JSON manifest.
+  </p>
+</section>
+
+<div class="card register-card">
+  <div class="card-head"><h2>Register a module</h2></div>
+  <form method="post" action="{{ url_for('register_module') }}" enctype="multipart/form-data" class="register-form">
+    <div class="form-row">
+      <label class="file-input">
+        <span>Choose manifest file…</span>
+        <input type="file" name="manifest_file" accept=".json,application/json">
+      </label>
+      <span class="form-or">or paste JSON</span>
+      <textarea name="manifest_json" rows="6" class="mono" placeholder='{
+  "module_id": "my-module",
+  "name": "My Module",
+  "version": "1.0.0",
+  "provider_type": "code",
+  "config": { "entry_point": "modules.sentiment_analyzer" }
+}'></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Register</button>
+  </form>
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <h2>Registered modules</h2>
+    <span class="mini-badge">{{ modules | length }} registered</span>
+  </div>
+
+  {% if modules %}
+  <table class="module-table">
+    <thead>
+      <tr>
+        <th>Module</th>
+        <th>Type</th>
+        <th>Version</th>
+        <th>Languages</th>
+        <th>Behavior</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in modules %}
+      <tr>
+        <td>
+          <div class="mod-name">{{ m.name }}</div>
+          <div class="mono muted">{{ m.module_id }}</div>
+          {% if m.description %}<div class="mod-desc">{{ m.description }}</div>{% endif %}
+        </td>
+        <td><span class="tag tag-provider">{{ m.provider_type }}</span></td>
+        <td class="mono">{{ m.version }}</td>
+        <td class="mono">{% for lang in (m.language or []) %}{{ lang }}{% if not loop.last %}, {% endif %}{% endfor %}</td>
+        <td class="mono">{{ m.behavior or 'annotate' }}</td>
+        <td class="actions">
+          <form method="post" action="{{ url_for('test_module') }}" class="inline-form">
+            <input type="hidden" name="module_id" value="{{ m.module_id }}">
+            <button type="submit" class="btn btn-ghost btn-sm">Test</button>
+          </form>
+          <form method="post" action="{{ url_for('remove_module') }}" class="inline-form"
+                onsubmit="return confirm('Remove module {{ m.module_id }}?');">
+            <input type="hidden" name="module_id" value="{{ m.module_id }}">
+            <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty-note">No modules registered. Register the built-in sentiment analyzer or your own manifest above.</p>
+  {% endif %}
+</div>
+{% endblock %}

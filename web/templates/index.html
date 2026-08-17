@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}Analyze — NLP Pipeline{% endblock %}
+
+{% macro meta_line(meta) %}
+  {% if meta %}
+    <span class="step-meta">
+      {% for key, value in meta.items() %}
+        {% if key == "label" and value is string %}<span class="tag tag-{{ value }}">{{ value }}</span>{% endif %}
+        {% if key == "score" and value is number %}<span class="mono">score {{ "%.2f"|format(value) }}</span>{% endif %}
+        {% if key == "changed" %}{% if value %}<span class="mini-badge">text changed</span>{% else %}<span class="mini-badge muted">unchanged</span>{% endif %}{% endif %}
+        {% if key == "reason" %}<span class="mini-badge muted">{{ value }}</span>{% endif %}
+        {% if key == "unknown_word_count" %}<span class="mini-badge warn">{{ value }} unknown words</span>{% endif %}
+        {% if key == "entity_count" %}<span class="mini-badge info">{{ value }} entities</span>{% endif %}
+        {% if key == "checked_word_count" %}<span class="mini-badge muted">{{ value }} words checked</span>{% endif %}
+      {% endfor %}
+    </span>
+  {% endif %}
+{% endmacro %}
+
+{% block content %}
+<section class="hero">
+  <h1>Analyze Nepali &amp; English text</h1>
+  <p>
+    Text flows through
+    {% for m in active_modules %}<code>{{ module_short(m) }}</code>{% if not loop.last %}<span class="arrow">→</span>{% endif %}{% endfor %}
+    <span class="arrow">→</span><code>extensions</code>
+    with a full audit trail of every stage.
+  </p>
+</section>
+
+<div class="grid-main">
+  <div class="col-form">
+    <form method="post" action="{{ url_for('analyze_route') }}" id="analyze-form" class="card analyze-card">
+      <div class="card-head">
+        <h2>Input</h2>
+        <div class="lang-select">
+          <label for="language">Language</label>
+          <select name="language" id="language">
+            <option value="ne" {{ 'selected' if lang == 'ne' else '' }}>नेपाली (Nepali)</option>
+            <option value="en" {{ 'selected' if lang == 'en' else '' }}>English</option>
+          </select>
+        </div>
+      </div>
+
+      <textarea name="text" id="text-input" rows="5"
+        placeholder="Type a sentence in Nepali or English…">{{ text or '' }}</textarea>
+
+      <div class="analyze-actions">
+        <button type="submit" class="btn btn-primary" id="analyze-btn">
+          <span class="btn-label">Analyze</span>
+          <span class="btn-spinner hidden" aria-hidden="true"></span>
+        </button>
+        <span class="hint">Try a sample:</span>
+        <div class="samples">
+          {% for s in samples %}
+            <button type="button" class="chip" data-fill="{{ s }}">{{ s }}</button>
+          {% endfor %}
+        </div>
+      </div>
+    </form>
+
+    {% if history %}
+    <div class="card history-card">
+      <div class="card-head"><h2>Recent runs</h2></div>
+      <ul class="history-list">
+        {% for run in history %}
+        <li>
+          <span class="hist-label {{ 'hist-pos' if run.sentiment_label == 'positive' else ('hist-neg' if run.sentiment_label == 'negative' else 'hist-neu') }}">
+            {{ (run.sentiment_label or '—') | upper }}
+          </span>
+          <span class="hist-text">{{ run.text | truncate(60) }}</span>
+          {% if run.entity_count %}<span class="mini-badge info">{{ run.entity_count }} entities</span>{% endif %}
+          {% if run.unknown_words %}<span class="mini-badge warn">{{ run.unknown_words }} unknown</span>{% endif %}
+          {% if run.error_count %}<span class="mini-badge danger">{{ run.error_count }} errors</span>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="col-result">
+    {% if result %}
+    <section class="results">
+      <div class="result-grid">
+
+        <div class="card result-card">
+          <div class="card-head">
+            <h2>Sentiment</h2>
+            {% if sentiment %}
+              <span class="sent-label sent-{{ sentiment.get('label', 'neutral') }}">
+                {{ sentiment.get('label', 'neutral') | upper }}
+              </span>
+            {% endif %}
+          </div>
+          {% if sentiment %}
+            {% set score = sentiment.get('score', 0.0) %}
+            <div class="score-bar-wrap">
+              <div class="score-bar">
+                <div class="score-fill {{ 'pos' if sentiment.get('label') == 'positive' else ('neg' if sentiment.get('label') == 'negative' else 'neu') }}"
+                     style="width: {{ (score * 100)|round|int }}%"></div>
+              </div>
+              <div class="score-caption mono">{{ "%.2f"|format(score) }} / 1.00</div>
+            </div>
+            <div class="sent-stats">
+              {% if sentiment.get('positive_hits') is not none %}
+                <span>positive hits: <b>{{ sentiment.positive_hits }}</b></span>
+                <span>negative hits: <b>{{ sentiment.negative_hits }}</b></span>
+                <span>tokens scored: <b>{{ sentiment.tokens_scored }}</b></span>
+              {% endif %}
+            </div>
+          {% else %}
+            <p class="empty-note">No sentiment annotation produced.</p>
+          {% endif %}
+        </div>
+
+        <div class="card result-card">
+          <div class="card-head">
+            <h2>Named entities</h2>
+            {% if spellcheck %}
+              <span class="mini-badge">{{ spellcheck.unknown_words | length }} unknown</span>
+            {% endif %}
+          </div>
+          {% if segments %}
+            <p class="ner-text">
+              {% for seg in segments %}
+                {% if seg.type %}
+                  <mark class="ent ent-{{ seg.type | lower | replace(' ', '-') }}">{{ seg.text }}</mark>
+                {% else %}
+                  {{ seg.text }}
+                {% endif %}
+              {% endfor %}
+            </p>
+            {% set counts = (result.metadata.annotations.get('ner') or {}).get('counts') or {} %}
+            <div class="legend">
+              {% for etype, count in counts.items() %}
+                <span class="legend-item"><i class="dot dot-{{ etype | lower | replace(' ', '-') }}"></i>{{ etype }} <b>({{ count }})</b></span>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="empty-note">No named entities found.</p>
+          {% endif %}
+        </div>
+
+        <div class="card result-card card-wide">
+          <div class="card-head">
+            <h2>Text</h2>
+            {% if result.current_text != result.original_input %}
+              <span class="mini-badge">normalized</span>
+            {% endif %}
+          </div>
+          <div class="text-pair">
+            <div class="text-box">
+              <div class="text-box-label">Original</div>
+              <p>{{ result.original_input }}</p>
+            </div>
+            <div class="text-box">
+              <div class="text-box-label">Current</div>
+              <p class="mono">{{ result.current_text }}</p>
+            </div>
+          </div>
+        </div>
+
+        {% if spellcheck and spellcheck.unknown_words %}
+        <div class="card result-card">
+          <div class="card-head">
+            <h2>Spellcheck</h2>
+            <span class="mini-badge warn">{{ spellcheck.checked_words }} checked</span>
+          </div>
+          <ul class="suggestion-list">
+            {% for word in spellcheck.unknown_words %}
+              {% set sug = spellcheck.suggestions.get(word) or {} %}
+              <li>
+                <span class="mono unknown-word">{{ word }}</span>
+                <span class="arrow">→</span>
+                {% if sug.suggestion %}
+                  <span class="mono">{{ sug.suggestion }}</span>
+                  <span class="conf mono">{{ "%.0f"|format((sug.confidence or 0) * 100) }}%</span>
+                {% else %}
+                  <span class="muted">no suggestion</span>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+
+        <div class="card result-card card-wide">
+          <div class="card-head">
+            <h2>Pipeline stages</h2>
+            <span class="mono muted">{{ result.pipeline_id | truncate(14) }}</span>
+          </div>
+          <ol class="timeline">
+            {% for step in result.history %}
+              <li class="step step-{{ step.status }}">
+                <span class="step-icon">{{ {'success': '✓', 'failed': '✕', 'skipped': '–'}.get(step.status, '?') }}</span>
+                <div class="step-body">
+                  <div class="step-top">
+                    <span class="step-name">{{ module_short(step.module) }}</span>
+                    <span class="step-status">{{ step.status }}</span>
+                    {{ meta_line(step.meta) }}
+                  </div>
+                  <div class="step-time mono muted">{{ step.timestamp }}</div>
+                </div>
+              </li>
+            {% endfor %}
+          </ol>
+        </div>
+
+        {% if result.errors %}
+        <div class="card result-card card-wide">
+          <div class="card-head"><h2>Errors</h2><span class="mini-badge danger">{{ result.errors | length }}</span></div>
+          <ul class="error-list">
+            {% for err in result.errors %}
+              <li><span class="mono">{{ err.module }}</span>: {{ err.error }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+
+        <div class="card result-card card-wide">
+          <details class="json-details">
+            <summary>Full envelope JSON <span class="mono muted">({{ result.pipeline_id }})</span></summary>
+            <pre class="json-pre">{{ result | tojson(indent=2) }}</pre>
+          </details>
+        </div>
+
+      </div>
+    </section>
+    {% else %}
+    <div class="card placeholder">
+      <div class="placeholder-glyph">॥</div>
+      <h2>Results will appear here</h2>
+      <p>Enter text on the left and press <b>Analyze</b>. Every stage of the pipeline is shown with its audit trail.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
