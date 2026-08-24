@@ -35,7 +35,7 @@ NEGATIVE_EN = {
 
 POSITIVE_NE = {
     "राम्रो", "ठीक", "सुन्दर", "माया", "खुसी", "रमाइलो", "उत्कृष्ट",
-    "धन्यवाद", "शुभ", "सफल", "राम्रो", "भलो", "मीठो", "हर्ष", "आनन्द",
+    "धन्यवाद", "शुभ", "सफल", "भलो", "मीठो", "हर्ष", "आनन्द",
     "प्रसन्न", "प्रशंसा", "सम्मान", "जित", "लाभ", "सहज", "शान्त",
 }
 
@@ -48,7 +48,7 @@ NEGATIVE_NE = {
 
 INTENSIFIERS = {"very", "extremely", "absolutely", "incredibly", "so", "really"}
 NEGATORS = {"not", "no", "never", "neither", "nor", "don't", "doesn't",
-            "didn't", "wasn't " "isn't", "aren't", "hardly", "barely",
+            "didn't", "wasn't", "isn't", "aren't", "hardly", "barely",
             "नभए", "होइन", "कहिल्यै", "न", "नत्र"}
 
 _WORD_RE = re.compile(r"[a-zA-Z\u0900-\u097F]+")
@@ -59,8 +59,8 @@ def _tokenize(text: str) -> list[str]:
 
 
 def _score_tokens(tokens: list[str]) -> tuple[float, int, int]:
-    pos_count = 0
-    neg_count = 0
+    pos_score = 0.0
+    neg_score = 0.0
     negated = False
     intensifier = 1.0
 
@@ -72,24 +72,30 @@ def _score_tokens(tokens: list[str]) -> tuple[float, int, int]:
             intensifier = 1.5
             continue
 
-        hit = False
-        if tok in POSITIVE_EN or tok in POSITIVE_NE:
-            pos_count += 1
-            hit = True
-        elif tok in NEGATIVE_EN or tok in NEGATIVE_NE:
-            neg_count += 1
-            hit = True
+        is_positive = tok in POSITIVE_EN or tok in POSITIVE_NE
+        is_negative = tok in NEGATIVE_EN or tok in NEGATIVE_NE
 
-        if hit and negated:
-            pos_count, neg_count = neg_count, pos_count
-            negated = False
-        elif hit:
-            negated = False
+        if is_positive or is_negative:
+            # Apply intensifier to this word's contribution
+            contribution = 1.0 * intensifier
 
-        if hit:
+            # If negated, flip the polarity
+            if negated:
+                if is_positive:
+                    neg_score += contribution
+                else:
+                    pos_score += contribution
+                negated = False
+            else:
+                if is_positive:
+                    pos_score += contribution
+                else:
+                    neg_score += contribution
+
+            # Reset intensifier after applying to this word
             intensifier = 1.0
 
-    return pos_count * intensifier, neg_count * intensifier, len(tokens)
+    return pos_score, neg_score, len(tokens)
 
 
 def analyze(text: str) -> dict:
