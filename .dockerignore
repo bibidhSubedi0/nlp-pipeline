@@ -1,0 +1,6 @@
+venv_soft_eng/
+venv-software/
+__pycache__/
+*.pyc
+.git/
+*.egg-info/
