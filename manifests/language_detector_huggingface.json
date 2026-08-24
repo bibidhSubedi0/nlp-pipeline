@@ -1,0 +1,13 @@
+{
+  "module_id": "language-detector-hf",
+  "name": "Language Detection (HuggingFace)",
+  "description": "XLM-RoBERTa-based language detection model supporting 20 languages",
+  "version": "1.0.0",
+  "provider_type": "huggingface",
+  "config": {
+    "model": "papluca/xlm-roberta-base-language-detection",
+    "task": "text-classification",
+    "device": "cpu",
+    "max_length": 512
+  }
+}
