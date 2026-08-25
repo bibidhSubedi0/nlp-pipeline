@@ -43,8 +43,6 @@ class HuggingFaceAdapter(BaseAdapter):
             task,
             model=model_id,
             device=0 if device == "cuda" else -1,
-            truncation=True,
-            max_length=max_length,
         )
         log.info("loaded huggingface adapter: %s -> %s", self.module_id, model_id)
 
