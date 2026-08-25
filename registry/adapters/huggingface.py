@@ -70,6 +70,18 @@ class HuggingFaceAdapter(BaseAdapter):
         try:
             results = self._pipeline(input_text)
 
+            # Sanitize: convert numpy types to native Python for JSON serialization
+            def _sanitize(obj):
+                if isinstance(obj, dict):
+                    return {k: _sanitize(v) for k, v in obj.items()}
+                if isinstance(obj, list):
+                    return [_sanitize(v) for v in obj]
+                if hasattr(obj, "item"):
+                    return obj.item()
+                return obj
+
+            results = _sanitize(results)
+
             if isinstance(results, list) and len(results) > 0:
                 top = results[0]
                 label = top.get("label", "neutral")
