@@ -316,3 +316,36 @@ This document contains research findings on lightweight HuggingFace models that 
 - [typeform/distilbert-base-uncased-mnli](https://huggingface.co/typeform/distilbert-base-uncased-mnli)
 - [papluca/xlm-roberta-base-language-detection](https://huggingface.co/papluca/xlm-roberta-base-language-detection)
 - [facebook/fasttext-language-identification](https://huggingface.co/facebook/fasttext-language-identification)
+
+---
+
+## Compatibility Rules (which models work with the plugin)
+
+The HuggingFace adapter (`registry/adapters/huggingface.py`) loads models via
+`transformers.pipeline(task, model=...)` and reads `results[0]["label"]` and
+`results[0]["score"]` from the output. Compatibility therefore depends on two things:
+
+### 1. Task / pipeline type (`config.task` in the manifest)
+
+| Category | Tasks | Works? | Why |
+|---|---|---|---|
+| Classification | `text-classification`, `sentiment-analysis`, `zero-shot-classification` | Yes | Output is `[{label, score}]` |
+| Token classification | `ner`, `token-classification` | Partial | Returns `entity`/`score` (no `label`); full list captured in raw output, headline label defaults to `neutral` |
+| Generation / text2text | `translation`, `summarization`, `text-generation`, `text2text-generation` | No | Output is `[{generated_text}]` — no `label`/`score`, so result is dropped |
+
+### 2. Model file format
+
+- Must be a standard transformers model with a valid `config.json` (a `model_type` key).
+- Raw checkpoints (e.g. `.pt` / `.bin` without config, custom training artifacts)
+  fail to load with `Unrecognized model`. Example of a failure:
+  `Sagar32/romanizedtransliterationmodel` is a raw PyTorch checkpoint, not a
+  loadable pipeline model.
+
+### Notes
+
+- For sentiment coloring in the web UI, labels should be
+  `positive` / `negative` / `neutral`.
+- `nlptown/bert-base-multilingual-uncased-sentiment` (~110MB) is the proven,
+  free-tier-safe sentiment example.
+- `bishaldpande/Ner-xlm-roberta-base` is a working Nepali NER model
+  (partial category).

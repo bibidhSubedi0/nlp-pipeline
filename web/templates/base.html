@@ -67,6 +67,18 @@
           </div>
 
           <div class="notice-section">
+            <h4>Which HuggingFace Models Can You Plug In?</h4>
+            <p>Not every HuggingFace model works with this pipeline. The plugin system uses the <code>transformers</code> pipeline API, so compatibility depends on the task type and the model file format.</p>
+            <ul>
+              <li><strong>WORK — classification tasks:</strong> <code>text-classification</code>, <code>sentiment-analysis</code>, <code>zero-shot-classification</code>. These return a <code>label</code> + <code>score</code>, which the adapter reads directly.</li>
+              <li><strong>PARTIAL — token classification (NER):</strong> <code>ner</code> / <code>token-classification</code>. The full entity list is captured in the output, but the headline label is not derived (always shown as <code>neutral</code>).</li>
+              <li><strong>DOES NOT WORK — generation / text2text:</strong> <code>translation</code>, <code>summarization</code>, <code>text-generation</code>, <code>text2text-generation</code>. These return <code>generated_text</code>, not <code>label</code>/<code>score</code>, so the result is dropped.</li>
+              <li><strong>Must be a standard transformers model</strong> with a valid <code>config.json</code> (contains a <code>model_type</code>). Raw checkpoints (e.g. <code>.pt</code> / <code>.bin</code> files without config, custom training artifacts) fail to load with <code>Unrecognized model</code>.</li>
+              <li>For sentiment coloring in this UI, the model's labels should be <code>positive</code> / <code>negative</code> / <code>neutral</code>.</li>
+            </ul>
+          </div>
+
+          <div class="notice-section">
             <h4>Run Locally for Full Experience</h4>
             <p>For the best experience with all HuggingFace models, run locally:</p>
             <div class="notice-code">
