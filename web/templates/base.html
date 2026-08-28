@@ -28,6 +28,58 @@
   </header>
 
   <main class="container">
+    <div class="notice-banner" id="notice-banner">
+      <div class="notice-content">
+        <div class="notice-header">
+          <span class="notice-icon">&#9888;</span>
+          <h3>Important Notice — Read Before Using</h3>
+          <button type="button" class="notice-close" onclick="document.getElementById('notice-banner').style.display='none'" aria-label="Close">&times;</button>
+        </div>
+        <div class="notice-body">
+          <div class="notice-section">
+            <h4>Compatibility Requirements</h4>
+            <ul>
+              <li><strong>Python 3.10+</strong> required (tested on 3.12 and 3.14)</li>
+              <li><strong>pip packages:</strong> Flask, transformers, torch, jsonschema, requests</li>
+              <li><strong>RAM:</strong> 2GB+ recommended for HuggingFace models</li>
+              <li><strong>Disk:</strong> 500MB+ for model downloads</li>
+            </ul>
+          </div>
+
+          <div class="notice-section">
+            <h4>Deployment Limitations (Render Free Tier)</h4>
+            <ul>
+              <li>This demo is hosted on <strong>Render.com free tier</strong> which has <strong>512MB RAM</strong> and <strong>limited storage</strong></li>
+              <li><strong>Large HuggingFace models (500MB+) will NOT work</strong> on this deployment due to memory/storage constraints</li>
+              <li>Only lightweight models (&lt;200MB) are supported on the free tier</li>
+              <li>For full HuggingFace model support, <a href="https://github.com/bibidhSubedi0/nlp-pipeline" target="_blank">run locally</a></li>
+            </ul>
+          </div>
+
+          <div class="notice-section">
+            <h4>Working HuggingFace Module Example</h4>
+            <p>The <strong>Multilingual Sentiment Analyzer</strong> works on this deployment:</p>
+            <div class="notice-example">
+              <code>nlptown/bert-base-multilingual-uncased-sentiment</code>
+              <span class="notice-badge">~110MB | Works on free tier</span>
+            </div>
+            <p class="notice-note">To enable: Go to <a href="/modules">Modules</a> → Register with manifest → Go to <a href="/config">Config</a> → Enable it</p>
+          </div>
+
+          <div class="notice-section">
+            <h4>Run Locally for Full Experience</h4>
+            <p>For the best experience with all HuggingFace models, run locally:</p>
+            <div class="notice-code">
+              <code>git clone https://github.com/bibidhSubedi0/nlp-pipeline.git</code><br>
+              <code>cd nlp-pipeline</code><br>
+              <code>./setup_and_run.sh</code> <span class="notice-note">(or setup_and_run.bat on Windows)</span>
+            </div>
+            <p><a href="https://github.com/bibidhSubedi0/nlp-pipeline" target="_blank" class="notice-link">View on GitHub →</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         <div class="flash-stack">

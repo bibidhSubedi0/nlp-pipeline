@@ -775,3 +775,145 @@ mark.ent {
   border-color: var(--green);
   box-shadow: 0 0 0 3px rgba(22, 163, 74, .15);
 }
+
+/* notice banner */
+
+.notice-banner {
+  margin-top: 16px;
+  margin-bottom: 16px;
+  border: 2px solid var(--amber);
+  border-radius: var(--radius);
+  background: var(--amber-soft);
+  overflow: hidden;
+}
+
+.notice-content {
+  padding: 0;
+}
+
+.notice-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, #92400e, #b45309);
+  color: #fff;
+}
+
+.notice-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  flex: 1;
+}
+
+.notice-icon {
+  font-size: 20px;
+}
+
+.notice-close {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+  opacity: 0.8;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.notice-close:hover {
+  opacity: 1;
+}
+
+.notice-body {
+  padding: 16px 20px;
+}
+
+.notice-section {
+  margin-bottom: 16px;
+}
+
+.notice-section:last-child {
+  margin-bottom: 0;
+}
+
+.notice-section h4 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #92400e;
+}
+
+.notice-section ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.notice-section li {
+  margin-bottom: 4px;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.notice-section p {
+  margin: 4px 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.notice-example {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.notice-example code {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--accent-dark);
+}
+
+.notice-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--green-soft);
+  color: var(--green);
+  white-space: nowrap;
+}
+
+.notice-code {
+  margin: 8px 0;
+  padding: 10px 14px;
+  background: #1e1b4b;
+  border-radius: 8px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: #a5f3fc;
+  line-height: 1.8;
+}
+
+.notice-note {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.notice-link {
+  display: inline-block;
+  margin-top: 6px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.notice-link:hover {
+  text-decoration: underline;
+}
