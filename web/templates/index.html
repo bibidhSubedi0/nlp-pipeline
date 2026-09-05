@@ -8,10 +8,10 @@
       {% for key, value in meta.items() %}
         {% if key == "label" and value is string %}<span class="tag tag-{{ value }}">{{ value }}</span>{% endif %}
         {% if key == "score" and value is number %}<span class="mono">score {{ "%.2f"|format(value) }}</span>{% endif %}
-        {% if key == "changed" %}{% if value %}<span class="mini-badge">text changed</span>{% else %}<span class="mini-badge muted">unchanged</span>{% endif %}{% endif %}
+        {% if key == "changed" %}{% if value %}<span class="mini-badge success">text modified</span>{% else %}<span class="mini-badge muted">annotation only</span>{% endif %}{% endif %}
         {% if key == "reason" %}<span class="mini-badge muted">{{ value }}</span>{% endif %}
         {% if key == "unknown_word_count" %}<span class="mini-badge warn">{{ value }} unknown words</span>{% endif %}
-        {% if key == "entity_count" %}<span class="mini-badge info">{{ value }} entities</span>{% endif %}
+        {% if key == "entity_count" %}<span class="mini-badge info">{{ value }} entities found</span>{% endif %}
         {% if key == "checked_word_count" %}<span class="mini-badge muted">{{ value }} words checked</span>{% endif %}
       {% endfor %}
     </span>
@@ -42,6 +42,7 @@
         </div>
       </div>
 
+      <label for="text-input" class="sr-only">Text to analyze</label>
       <textarea name="text" id="text-input" rows="5"
         placeholder="Type a sentence in Nepali or English…">{{ text or '' }}</textarea>
 
@@ -200,6 +201,23 @@
                     <span class="step-status">{{ step.status }}</span>
                     {{ meta_line(step.meta) }}
                   </div>
+                  {% if step.meta %}
+                    <div class="step-summary">
+                      {% if step.module == 'normalizer' %}
+                        {% if step.meta.get('changed') %}
+                          <span class="summary-text">Normalized text: cleaned whitespace, punctuation, and Unicode</span>
+                        {% else %}
+                          <span class="summary-text">Text was already clean — no changes needed</span>
+                        {% endif %}
+                      {% elif step.module == 'spellcheck' %}
+                        <span class="summary-text">Checked {{ step.meta.get('checked_word_count', 0) }} words, found {{ step.meta.get('unknown_word_count', 0) }} unknown</span>
+                      {% elif step.module == 'ner' %}
+                        <span class="summary-text">Found {{ step.meta.get('entity_count', 0) }} named entities in text</span>
+                      {% elif step.module == 'sentiment_analyzer' %}
+                        <span class="summary-text">Analyzed sentiment: {{ step.meta.get('label', 'neutral') }} (score: {{ "%.2f"|format(step.meta.get('score', 0.0)) }})</span>
+                      {% endif %}
+                    </div>
+                  {% endif %}
                   <div class="step-time mono muted">{{ step.timestamp }}</div>
                 </div>
               </li>
@@ -221,7 +239,10 @@
         <div class="card result-card card-wide">
           <details class="json-details">
             <summary>Full envelope JSON <span class="mono muted">({{ result.pipeline_id }})</span></summary>
-            <pre class="json-pre">{{ result | tojson(indent=2) }}</pre>
+            <div class="json-container">
+              <button type="button" class="btn btn-sm btn-ghost copy-btn" onclick="copyJson(this)">Copy JSON</button>
+              <pre class="json-pre" id="json-output">{{ result | tojson(indent=2) }}</pre>
+            </div>
           </details>
         </div>
 

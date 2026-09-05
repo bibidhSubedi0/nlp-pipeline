@@ -16,12 +16,12 @@ def test_orchestrator_skips_missing_module():
     from orchestrator import config
     original = list(config.ACTIVE_MODULES)
     try:
-        config.ACTIVE_MODULES = ["nonexistent_module"]
+        config.ACTIVE_MODULES[:] = ["nonexistent_module"]
         envelope = new_envelope("test")
         result = run_pipeline(envelope)
         assert any("not found or broken" in e.get("error", "") for e in result["errors"])
     finally:
-        config.ACTIVE_MODULES = original
+        config.ACTIVE_MODULES[:] = original
 
 
 def test_orchestrator_continues_after_module_failure():
@@ -32,11 +32,11 @@ def test_orchestrator_continues_after_module_failure():
     from orchestrator import config
     original = list(config.ACTIVE_MODULES)
     try:
-        config.ACTIVE_MODULES = ["fake"]
+        config.ACTIVE_MODULES[:] = ["fake"]
         sys.modules["modules.fake"] = fake_module
         envelope = new_envelope("test")
         result = run_pipeline(envelope)
         assert len(result["errors"]) > 0, "Expected errors from module failure"
     finally:
-        config.ACTIVE_MODULES = original
+        config.ACTIVE_MODULES[:] = original
         sys.modules.pop("modules.fake", None)

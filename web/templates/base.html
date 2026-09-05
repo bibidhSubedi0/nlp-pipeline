@@ -28,11 +28,68 @@
   </header>
 
   <main class="container">
+    <div class="notice-banner" id="notice-banner">
+      <div class="notice-content">
+        <div class="notice-header">
+          <span class="notice-icon">&#9888;</span>
+          <h3>Important Notice — Read Before Using</h3>
+          <button type="button" class="notice-close" onclick="document.getElementById('notice-banner').style.display='none'" aria-label="Close">&times;</button>
+        </div>
+        <div class="notice-body">
+          <div class="notice-section">
+            <h4>Deployment Limitations (Render Free Tier)</h4>
+            <ul>
+              <li>This demo is hosted on <strong>Render.com free tier</strong> which has <strong>512MB RAM</strong> and <strong>limited storage</strong></li>
+              <li><strong>Large HuggingFace models (500MB+) will NOT work</strong> on this deployment due to memory/storage constraints</li>
+              <li>Only lightweight models (&lt;200MB) are supported on the free tier</li>
+              <li>For full HuggingFace model support, <a href="https://github.com/bibidhSubedi0/nlp-pipeline" target="_blank">run locally</a></li>
+            </ul>
+          </div>
+
+          <div class="notice-section">
+            <h4>Working HuggingFace Module Example</h4>
+            <p>The <strong>Multilingual Sentiment Analyzer</strong> works on this deployment:</p>
+            <div class="notice-example">
+              <code>nlptown/bert-base-multilingual-uncased-sentiment</code>
+              <span class="notice-badge">~110MB | Works on free tier</span>
+            </div>
+            <p class="notice-note">To enable: Go to <a href="/modules">Modules</a> → Register with manifest → Go to <a href="/config">Config</a> → Enable it</p>
+          </div>
+
+          <div class="notice-section">
+            <h4>Which HuggingFace Models Can You Plug In?</h4>
+            <p>Not every HuggingFace model works with this pipeline. The plugin system uses the <code>transformers</code> pipeline API, so compatibility depends on the task type and the model file format.</p>
+            <ul>
+              <li><strong>WORK — classification tasks:</strong> <code>text-classification</code>, <code>sentiment-analysis</code>, <code>zero-shot-classification</code>. These return a <code>label</code> + <code>score</code>, which the adapter reads directly.</li>
+              <li><strong>PARTIAL — token classification (NER):</strong> <code>ner</code> / <code>token-classification</code>. The full entity list is captured in the output, but the headline label is not derived (always shown as <code>neutral</code>).</li>
+              <li><strong>DOES NOT WORK — generation / text2text:</strong> <code>translation</code>, <code>summarization</code>, <code>text-generation</code>, <code>text2text-generation</code>. These return <code>generated_text</code>, not <code>label</code>/<code>score</code>, so the result is dropped.</li>
+              <li><strong>Must be a standard transformers model</strong> with a valid <code>config.json</code> (contains a <code>model_type</code>). Raw checkpoints (e.g. <code>.pt</code> / <code>.bin</code> files without config, custom training artifacts) fail to load with <code>Unrecognized model</code>.</li>
+              <li>For sentiment coloring in this UI, the model's labels should be <code>positive</code> / <code>negative</code> / <code>neutral</code>.</li>
+            </ul>
+          </div>
+
+          <div class="notice-section">
+            <h4>Run Locally for Full Experience</h4>
+            <p>For the best experience with all HuggingFace models, run locally:</p>
+            <div class="notice-code">
+              <code>git clone https://github.com/bibidhSubedi0/nlp-pipeline.git</code><br>
+              <code>cd nlp-pipeline</code><br>
+              <code>./setup_and_run.sh</code> <span class="notice-note">(or setup_and_run.bat on Windows)</span>
+            </div>
+            <p><a href="https://github.com/bibidhSubedi0/nlp-pipeline" target="_blank" class="notice-link">View on GitHub →</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         <div class="flash-stack">
           {% for category, message in messages %}
-            <div class="flash flash-{{ category }}">{{ message }}</div>
+            <div class="flash flash-{{ category }}">
+              {{ message }}
+              <button type="button" class="flash-dismiss" onclick="this.parentElement.remove()" aria-label="Dismiss">&times;</button>
+            </div>
           {% endfor %}
         </div>
       {% endif %}

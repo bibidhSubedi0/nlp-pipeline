@@ -1,0 +1,13 @@
+{
+  "module_id": "sentiment-hf-multilingual",
+  "name": "Multilingual Sentiment (HuggingFace)",
+  "description": "BERT-based multilingual sentiment analysis model supporting multiple languages including Nepali",
+  "version": "1.0.0",
+  "provider_type": "huggingface",
+  "config": {
+    "model": "nlptown/bert-base-multilingual-uncased-sentiment",
+    "task": "sentiment-analysis",
+    "device": "cpu",
+    "max_length": 512
+  }
+}
